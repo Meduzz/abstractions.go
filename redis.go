@@ -1,6 +1,8 @@
 package abstractions
 
 import (
+	"time"
+
 	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/caching"
 	"github.com/Meduzz/abstractions.go/internal/redis/csrf"
@@ -15,13 +17,13 @@ func CreateRedisConfig(conn *redis.Client, prefix string) *root.RedisConfig {
 }
 
 // RedisCaching - create a new caching module with the provided config and codec.
-func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T]) lib.CacheAbstraction[T] {
-	return caching.NewCaching[T](config, codec)
+func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.Duration) lib.CacheAbstraction[T] {
+	return caching.NewCaching[T](config, codec, ttl)
 }
 
 // RedisCSRF - create a new CSRF module with the provided config.
-func RedisCSRF(config *root.RedisConfig) lib.CSRFAbstraction {
-	return csrf.NewCSRFAbstraction(config)
+func RedisCSRF(config *root.RedisConfig, ttl time.Duration) lib.CSRFAbstraction {
+	return csrf.NewCSRFAbstraction(config, ttl)
 }
 
 // RedisEventing - create a new eventing module.
