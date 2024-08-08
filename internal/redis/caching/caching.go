@@ -15,14 +15,16 @@ type (
 		config *root.RedisConfig
 		codec  lib.Codec[T]
 		ttl    time.Duration
+		name   string
 	}
 )
 
-func NewCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.Duration) lib.CacheAbstraction[T] {
+func NewCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.Duration, name string) lib.CacheAbstraction[T] {
 	return &abstraction[T]{
 		config: config,
 		codec:  codec,
 		ttl:    ttl,
+		name:   name,
 	}
 }
 
@@ -33,13 +35,13 @@ func (a *abstraction[T]) Write(ctx context.Context, key string, data *T) error {
 		return err
 	}
 
-	result := a.config.Redis().Set(ctx, a.config.Prefix(key), bs, a.ttl)
+	result := a.config.Redis().SetEX(ctx, a.config.Prefix(a.name, key), bs, a.ttl)
 
 	return result.Err()
 }
 
 func (a *abstraction[T]) Read(ctx context.Context, key string) (*T, error) {
-	result := a.config.Redis().Get(ctx, a.config.Prefix(key))
+	result := a.config.Redis().GetEx(ctx, a.config.Prefix(a.name, key), a.ttl)
 
 	bs, err := result.Bytes()
 
@@ -48,12 +50,6 @@ func (a *abstraction[T]) Read(ctx context.Context, key string) (*T, error) {
 			return nil, lib.ErrKeyNotFound
 		}
 
-		return nil, err
-	}
-
-	err = a.config.Redis().Set(ctx, a.config.Prefix(key), bs, a.ttl).Err()
-
-	if err != nil {
 		return nil, err
 	}
 

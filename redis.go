@@ -18,8 +18,8 @@ func CreateRedisConfig(conn *redis.Client, prefix string) *root.RedisConfig {
 }
 
 // RedisCaching - create a new caching module with the provided config and codec.
-func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.Duration) lib.CacheAbstraction[T] {
-	return caching.NewCaching[T](config, codec, ttl)
+func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.Duration, name string) lib.CacheAbstraction[T] {
+	return caching.NewCaching[T](config, codec, ttl, name)
 }
 
 // RedisCSRF - create a new CSRF module with the provided config.
