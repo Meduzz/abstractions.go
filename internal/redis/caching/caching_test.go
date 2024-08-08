@@ -27,7 +27,7 @@ func TestCaching(t *testing.T) {
 	defer conn.Close()
 
 	t.Run("test write, extend and read from cache, incl expired cache", func(t *testing.T) {
-		module := caching.NewCaching(cfg, codec.NewJsonCodec[testdata](), time.Second, "test")
+		module := caching.NewCaching(cfg, codec.NewJsonCodec[testdata](), time.Second, "cache")
 		data := &testdata{"project", 1}
 		ctx := context.Background()
 

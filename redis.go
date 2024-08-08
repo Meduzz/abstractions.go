@@ -23,8 +23,8 @@ func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T], ttl time.
 }
 
 // RedisCSRF - create a new CSRF module with the provided config.
-func RedisCSRF(config *root.RedisConfig, ttl time.Duration) lib.CSRFAbstraction {
-	return csrf.NewCSRFAbstraction(config, ttl)
+func RedisCSRF(config *root.RedisConfig, ttl time.Duration, name string) lib.CSRFAbstraction {
+	return csrf.NewCSRFAbstraction(config, ttl, name)
 }
 
 // RedisEventing - create a new eventing module.

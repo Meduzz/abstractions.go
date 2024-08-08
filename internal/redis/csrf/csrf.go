@@ -15,13 +15,15 @@ type (
 	abstraction struct {
 		config *root.RedisConfig
 		ttl    time.Duration
+		name   string
 	}
 )
 
-func NewCSRFAbstraction(config *root.RedisConfig, ttl time.Duration) lib.CSRFAbstraction {
+func NewCSRFAbstraction(config *root.RedisConfig, ttl time.Duration, name string) lib.CSRFAbstraction {
 	return &abstraction{
 		config: config,
 		ttl:    ttl,
+		name:   name,
 	}
 }
 
@@ -34,7 +36,7 @@ func (a *abstraction) Generate(ctx context.Context) (*lib.CSRFToken, error) {
 		Value: value,
 	}
 
-	err := a.config.Redis().Set(ctx, a.config.Prefix(key), value, a.ttl).Err()
+	err := a.config.Redis().Set(ctx, a.config.Prefix(a.name, key), value, a.ttl).Err()
 
 	if err != nil {
 		return nil, err
@@ -44,7 +46,7 @@ func (a *abstraction) Generate(ctx context.Context) (*lib.CSRFToken, error) {
 }
 
 func (a *abstraction) Verify(ctx context.Context, key, value string) (bool, error) {
-	data, err := a.config.Redis().Get(ctx, a.config.Prefix(key)).Result()
+	data, err := a.config.Redis().GetDel(ctx, a.config.Prefix(a.name, key)).Result()
 
 	if err != nil {
 		if errors.Is(redis.Nil, err) {
@@ -54,7 +56,5 @@ func (a *abstraction) Verify(ctx context.Context, key, value string) (bool, erro
 		return false, err
 	}
 
-	err = a.config.Redis().Del(ctx, a.config.Prefix(key)).Err()
-
-	return data == value, err
+	return data == value, nil
 }

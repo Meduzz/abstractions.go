@@ -14,7 +14,7 @@ func TestCSRF(t *testing.T) {
 	conn := rudis.Connect()
 	cfg := root.NewRedisConfig(conn, "")
 	ctx := context.Background()
-	module := csrf.NewCSRFAbstraction(cfg, time.Second)
+	module := csrf.NewCSRFAbstraction(cfg, time.Second, "csrf")
 
 	defer conn.Close()
 
