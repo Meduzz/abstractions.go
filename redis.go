@@ -1,6 +1,7 @@
 package abstractions
 
 import (
+	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/caching"
 	"github.com/Meduzz/abstractions.go/internal/redis/csrf"
 	"github.com/Meduzz/abstractions.go/internal/redis/eventing"
@@ -8,22 +9,22 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-// CreateConfig - create a RedisConfig from a redis connection and a prefix (optionally empty).
-func CreateConfig(conn *redis.Client, prefix string) *lib.RedisConfig {
-	return lib.NewRedisConfig(conn, prefix)
+// CreateRedisConfig - create a RedisConfig from a redis connection and a prefix (optionally empty).
+func CreateRedisConfig(conn *redis.Client, prefix string) *root.RedisConfig {
+	return root.NewRedisConfig(conn, prefix)
 }
 
-// Caching - create a new caching module with the provided config and codec.
-func Caching[T any](config *lib.RedisConfig, codec lib.Codec[T]) lib.CacheAbstraction[T] {
+// RedisCaching - create a new caching module with the provided config and codec.
+func RedisCaching[T any](config *root.RedisConfig, codec lib.Codec[T]) lib.CacheAbstraction[T] {
 	return caching.NewCaching[T](config, codec)
 }
 
-// Csrf - create a new CSRF module with the provided config.
-func Csrf(config *lib.RedisConfig) lib.CSRFAbstraction {
+// RedisCSRF - create a new CSRF module with the provided config.
+func RedisCSRF(config *root.RedisConfig) lib.CSRFAbstraction {
 	return csrf.NewCSRFAbstraction(config)
 }
 
-// Eventing - create a new eventing module.
-func Eventing(config *lib.RedisConfig) lib.EventingAbstraction {
-	return eventing.NewEventing(config)
+// RedisEventing - create a new eventing module.
+func RedisEventing[T any](topic string, codec lib.Codec[T], config *root.RedisConfig) lib.EventingAbstraction[T] {
+	return eventing.NewEventing[T](topic, codec, config)
 }

@@ -2,48 +2,50 @@ package eventing
 
 import (
 	"context"
-	"encoding/json"
 
+	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
-	eventingAbstraction struct {
-		config *lib.RedisConfig
+	eventingAbstraction[T any] struct {
+		config *root.RedisConfig
+		topic  string
+		codec  lib.Codec[T]
 	}
 )
 
-func NewEventing(config *lib.RedisConfig) lib.EventingAbstraction {
-	return &eventingAbstraction{config}
+func NewEventing[T any](topic string, codec lib.Codec[T], config *root.RedisConfig) lib.EventingAbstraction[T] {
+	return &eventingAbstraction[T]{config, topic, codec}
 }
 
-func (e *eventingAbstraction) Publish(ctx context.Context, topic string, payload interface{}) error {
-	bs, err := json.Marshal(payload)
+func (e *eventingAbstraction[T]) Publish(ctx context.Context, payload *T) error {
+	bs, err := e.codec.Encode(payload)
 
 	if err != nil {
 		return err
 	}
 
-	return e.config.Redis().Publish(ctx, topic, bs).Err()
+	return e.config.Redis().Publish(ctx, e.topic, bs).Err()
 }
 
-func (e *eventingAbstraction) Subscribe(ctx context.Context, pattern string, handler func(lib.Context)) {
-	sub := e.config.Redis().PSubscribe(ctx, pattern)
+func (e *eventingAbstraction[T]) Subscribe(ctx context.Context, handler func(*T)) {
+	sub := e.config.Redis().PSubscribe(ctx, e.topic)
 	events := sub.Channel()
 
-	go startEventHandler(events, sub, e.config, pattern, handler)
+	go e.startEventHandler(events, handler)
 }
 
-func startEventHandler(topic <-chan *redis.Message, sub *redis.PubSub, cfg *lib.RedisConfig, pattern string, handler func(lib.Context)) {
+func (e *eventingAbstraction[T]) startEventHandler(topic <-chan *redis.Message, handler func(*T)) {
 	for event := range topic {
-		context := &eventingContext{
-			sub:     sub,
-			msg:     event,
-			cfg:     cfg,
-			pattern: pattern,
+		payload, err := e.codec.Decode([]byte(event.Payload))
+
+		if err != nil {
+			// TODO spew this onto stdout somehow?
+			continue
 		}
 
-		handler(context)
+		handler(payload)
 	}
 }

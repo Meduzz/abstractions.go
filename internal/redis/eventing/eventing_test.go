@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Meduzz/abstractions.go/codec"
+	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/eventing"
-	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/Meduzz/helper/rudis"
 )
 
@@ -17,16 +18,17 @@ type (
 
 func TestEventing(t *testing.T) {
 	conn := rudis.Connect()
-	cfg := lib.NewRedisConfig(conn, "")
+	cfg := root.NewRedisConfig(conn, "")
+	codec := codec.NewJsonCodec[testdata]()
 	ctx := context.Background()
 	result := make(chan string, 10)
-	subject := eventing.NewEventing(cfg)
-	subject.Subscribe(ctx, "test.*", listener(result))
+	subject := eventing.NewEventing("test.1", codec, cfg)
+	subject.Subscribe(ctx, listener(result))
 
 	defer conn.Close()
 
 	t.Run("test 1", func(t *testing.T) {
-		subject.Publish(ctx, "test.1", &testdata{"test 1"})
+		subject.Publish(ctx, &testdata{"test 1"})
 
 		first := <-result
 
@@ -36,15 +38,8 @@ func TestEventing(t *testing.T) {
 	})
 }
 
-func listener(gossip chan string) func(lib.Context) {
-	return func(ctx lib.Context) {
-		event := &testdata{}
-		err := ctx.JSON(event)
-
-		if err != nil {
-			panic(err)
-		}
-
-		gossip <- event.Message
+func listener(gossip chan string) func(*testdata) {
+	return func(it *testdata) {
+		gossip <- it.Message
 	}
 }

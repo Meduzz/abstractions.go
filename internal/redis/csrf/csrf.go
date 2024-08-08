@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/Meduzz/helper/hashing"
 	"github.com/go-redis/redis/v8"
@@ -12,11 +13,11 @@ import (
 
 type (
 	abstraction struct {
-		config *lib.RedisConfig
+		config *root.RedisConfig
 	}
 )
 
-func NewCSRFAbstraction(config *lib.RedisConfig) lib.CSRFAbstraction {
+func NewCSRFAbstraction(config *root.RedisConfig) lib.CSRFAbstraction {
 	return &abstraction{
 		config: config,
 	}
