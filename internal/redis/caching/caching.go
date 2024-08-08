@@ -55,3 +55,7 @@ func (a *abstraction[T]) Read(ctx context.Context, key string) (*T, error) {
 
 	return a.codec.Decode(bs)
 }
+
+func (a *abstraction[T]) Del(ctx context.Context, key string) error {
+	return a.config.Redis().Del(ctx, a.config.Prefix(a.name, key)).Err()
+}

@@ -61,3 +61,9 @@ func (l *localCache[T]) Read(ctx context.Context, key string) (*T, error) {
 
 	return item.data, nil
 }
+
+func (l *localCache[T]) Del(ctx context.Context, key string) error {
+	delete(l.storage, key)
+
+	return nil
+}

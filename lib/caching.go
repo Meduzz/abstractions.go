@@ -11,5 +11,7 @@ type (
 		Write(ctx context.Context, key string, data *T) error
 		// Read - read data from the provided key (and extend it), if exists otherwise return error.
 		Read(ctx context.Context, key string) (*T, error)
+		// Del - deletes a cache key.
+		Del(ctx context.Context, key string) error
 	}
 )

@@ -59,4 +59,30 @@ func TestLocalCache(t *testing.T) {
 			t.Error("result was not nil")
 		}
 	})
+
+	t.Run("remove an item from cache", func(t *testing.T) {
+		err := subject.Write(ctx, "data1", data1)
+
+		if err != nil {
+			t.Errorf("error was not nil, %v", err)
+		}
+
+		result, err := subject.Read(ctx, "data1")
+
+		if err != nil {
+			t.Errorf("error was not nil, %v", err)
+		}
+
+		if result.value != data1.value {
+			t.Errorf("result was not data1 but %s", result.value)
+		}
+
+		subject.Del(ctx, "data1")
+
+		_, err = subject.Read(ctx, "data1")
+
+		if err == nil {
+			t.Errorf("there was no error")
+		}
+	})
 }
