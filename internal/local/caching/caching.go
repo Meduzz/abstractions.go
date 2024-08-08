@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Meduzz/abstractions.go/internal/local/interval"
 	"github.com/Meduzz/abstractions.go/lib"
 )
 
@@ -20,6 +21,15 @@ type (
 
 func NewCache[T any](ttl time.Duration) lib.CacheAbstraction[T] {
 	storage := make(map[string]*cacheValue[T])
+
+	interval.OnInterval(5*time.Second, func() {
+		for k, v := range storage {
+			if v.expire.Before(time.Now()) {
+				delete(storage, k)
+			}
+		}
+	})
+
 	return &localCache[T]{ttl, storage}
 }
 

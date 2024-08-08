@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/Meduzz/abstractions.go/internal/local/interval"
 	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/Meduzz/helper/hashing"
 )
@@ -22,6 +23,15 @@ type (
 
 func NewLocalCsrf(ttl time.Duration) lib.CSRFAbstraction {
 	storage := make(map[string]*localToken)
+
+	interval.OnInterval(5*time.Second, func() {
+		for k, v := range storage {
+			if v.expires.Before(time.Now()) {
+				delete(storage, k)
+			}
+		}
+	})
+
 	return &localCsrf{storage, ttl}
 }
 
