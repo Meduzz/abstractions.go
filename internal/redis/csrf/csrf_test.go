@@ -14,12 +14,12 @@ func TestCSRF(t *testing.T) {
 	conn := rudis.Connect()
 	cfg := root.NewRedisConfig(conn, "")
 	ctx := context.Background()
-	module := csrf.NewCSRFAbstraction(cfg)
+	module := csrf.NewCSRFAbstraction(cfg, time.Second)
 
 	defer conn.Close()
 
 	t.Run("generate and verify a token", func(t *testing.T) {
-		token, err := module.Generate(ctx, time.Second)
+		token, err := module.Generate(ctx)
 
 		if err != nil {
 			t.Error("generating token threw error", err)
@@ -64,7 +64,7 @@ func TestCSRF(t *testing.T) {
 	})
 
 	t.Run("slow verifier is slow", func(t *testing.T) {
-		token, err := module.Generate(ctx, time.Second)
+		token, err := module.Generate(ctx)
 
 		if err != nil {
 			t.Error("generating token threw error", err)

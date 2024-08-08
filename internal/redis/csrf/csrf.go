@@ -14,16 +14,18 @@ import (
 type (
 	abstraction struct {
 		config *root.RedisConfig
+		ttl    time.Duration
 	}
 )
 
-func NewCSRFAbstraction(config *root.RedisConfig) lib.CSRFAbstraction {
+func NewCSRFAbstraction(config *root.RedisConfig, ttl time.Duration) lib.CSRFAbstraction {
 	return &abstraction{
 		config: config,
+		ttl:    ttl,
 	}
 }
 
-func (a *abstraction) Generate(ctx context.Context, duration time.Duration) (*lib.CSRFToken, error) {
+func (a *abstraction) Generate(ctx context.Context) (*lib.CSRFToken, error) {
 	key := hashing.Token()
 	value := hashing.Secret()
 
@@ -32,7 +34,7 @@ func (a *abstraction) Generate(ctx context.Context, duration time.Duration) (*li
 		Value: value,
 	}
 
-	err := a.config.Redis().Set(ctx, a.config.Prefix(key), value, duration).Err()
+	err := a.config.Redis().Set(ctx, a.config.Prefix(key), value, a.ttl).Err()
 
 	if err != nil {
 		return nil, err

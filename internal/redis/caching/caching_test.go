@@ -2,11 +2,11 @@ package caching_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 	"time"
 
+	"github.com/Meduzz/abstractions.go/codec"
 	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/caching"
 	"github.com/Meduzz/abstractions.go/lib"
@@ -27,24 +27,14 @@ func TestCaching(t *testing.T) {
 	defer conn.Close()
 
 	t.Run("test write, extend and read from cache, incl expired cache", func(t *testing.T) {
-		module := caching.NewCaching[testdata](cfg, testdata{})
+		module := caching.NewCaching(cfg, codec.NewJsonCodec[testdata](), time.Second)
 		data := &testdata{"project", 1}
 		ctx := context.Background()
 
-		err := module.Write(ctx, "cache.test1", time.Second, data)
+		err := module.Write(ctx, "cache.test1", data)
 
 		if err != nil {
 			t.Error("writing to cache threw error", err)
-		}
-
-		first, err := module.ReadAndExtend(ctx, "cache.test1", time.Second)
-
-		if err != nil {
-			t.Error("readAndExtend threw error", err)
-		}
-
-		if data.Name != first.Name && data.Age != first.Age {
-			t.Error("data was not equal to the result", data, first)
 		}
 
 		second, err := module.Read(ctx, "cache.test1")
@@ -68,16 +58,4 @@ func TestCaching(t *testing.T) {
 			t.Error("no error was thrown", data)
 		}
 	})
-}
-
-func (testdata) Encode(data *testdata) ([]byte, error) {
-	return json.Marshal(data)
-}
-
-func (testdata) Decode(bs []byte) (*testdata, error) {
-	val := &testdata{}
-
-	err := json.Unmarshal(bs, val)
-
-	return val, err
 }
