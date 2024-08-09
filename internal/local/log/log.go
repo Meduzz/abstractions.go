@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/helper/fp"
 	"github.com/Meduzz/helper/fp/slice"
 )
 
@@ -19,7 +18,7 @@ func NewLocalLog[T any]() lib.LogAbstraction[T] {
 }
 
 func (l *localLog[T]) Append(ctx context.Context, work *T) error {
-	l.storage = slice.Concat(l.storage, fp.Of(work))
+	l.storage = append(l.storage, work)
 
 	return nil
 }
