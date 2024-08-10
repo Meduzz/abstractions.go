@@ -3,20 +3,20 @@ package eventing
 import (
 	"context"
 
-	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/lib"
+	"github.com/Meduzz/abstractions.go/lib/vendor"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
 	eventingAbstraction[T any] struct {
-		config *root.RedisConfig
+		config *vendor.RedisConfig
 		topic  string
 		codec  lib.Codec[T]
 	}
 )
 
-func NewEventing[T any](topic string, codec lib.Codec[T], config *root.RedisConfig) lib.EventingAbstraction[T] {
+func NewEventing[T any](topic string, codec lib.Codec[T], config *vendor.RedisConfig) lib.EventingAbstraction[T] {
 	return &eventingAbstraction[T]{config, topic, codec}
 }
 

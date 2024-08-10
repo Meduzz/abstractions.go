@@ -5,21 +5,21 @@ import (
 	"errors"
 	"time"
 
-	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/lib"
+	"github.com/Meduzz/abstractions.go/lib/vendor"
 	"github.com/Meduzz/helper/hashing"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
 	abstraction struct {
-		config *root.RedisConfig
+		config *vendor.RedisConfig
 		ttl    time.Duration
 		name   string
 	}
 )
 
-func NewCSRFAbstraction(config *root.RedisConfig, ttl time.Duration, name string) lib.CSRFAbstraction {
+func NewCSRFAbstraction(config *vendor.RedisConfig, ttl time.Duration, name string) lib.CSRFAbstraction {
 	return &abstraction{
 		config: config,
 		ttl:    ttl,

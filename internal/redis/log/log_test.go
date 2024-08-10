@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Meduzz/abstractions.go/codec"
-	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/log"
+	"github.com/Meduzz/abstractions.go/lib/vendor"
 	"github.com/Meduzz/helper/rudis"
 )
 
@@ -19,7 +19,7 @@ type (
 func TestRedisLog(t *testing.T) {
 	conn := rudis.Connect()
 	codec := codec.NewJsonCodec[testData]()
-	config := root.NewRedisConfig(conn, "test1")
+	config := vendor.NewRedisConfig(conn, "test1")
 	subject := log.NewRedisLog(config, codec, "testData")
 	ctx := context.Background()
 	work1 := &testData{"work1"}

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/Meduzz/abstractions.go/codec"
-	root "github.com/Meduzz/abstractions.go/internal/redis"
 	"github.com/Meduzz/abstractions.go/internal/redis/caching"
 	"github.com/Meduzz/abstractions.go/lib"
+	"github.com/Meduzz/abstractions.go/lib/vendor"
 	"github.com/Meduzz/helper/rudis"
 )
 
@@ -22,7 +22,7 @@ type (
 
 func TestCaching(t *testing.T) {
 	conn := rudis.Connect()
-	cfg := root.NewRedisConfig(conn, "")
+	cfg := vendor.NewRedisConfig(conn, "")
 	subject := caching.NewCaching(cfg, codec.NewJsonCodec[testdata](), time.Second, "cache")
 	data := &testdata{"project", 1}
 	ctx := context.Background()
