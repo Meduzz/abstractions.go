@@ -5,19 +5,19 @@ import (
 	"errors"
 
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/abstractions.go/lib/vendor"
+	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
 	logAbstraction[T any] struct {
-		config *vendor.RedisConfig
+		config *specific.RedisConfig
 		codec  lib.Codec[T]
 		name   string
 	}
 )
 
-func NewRedisLog[T any](config *vendor.RedisConfig, codec lib.Codec[T], name string) lib.LogAbstraction[T] {
+func NewRedisLog[T any](config *specific.RedisConfig, codec lib.Codec[T], name string) lib.LogAbstraction[T] {
 	fullName := config.Prefix(name)
 
 	return &logAbstraction[T]{

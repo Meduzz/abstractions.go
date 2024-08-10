@@ -1,4 +1,4 @@
-package vendor
+package specific
 
 import (
 	"fmt"

@@ -6,20 +6,20 @@ import (
 	"time"
 
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/abstractions.go/lib/vendor"
+	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
 	abstraction[T any] struct {
-		config *vendor.RedisConfig
+		config *specific.RedisConfig
 		codec  lib.Codec[T]
 		ttl    time.Duration
 		name   string
 	}
 )
 
-func NewCaching[T any](config *vendor.RedisConfig, codec lib.Codec[T], ttl time.Duration, name string) lib.CacheAbstraction[T] {
+func NewCaching[T any](config *specific.RedisConfig, codec lib.Codec[T], ttl time.Duration, name string) lib.CacheAbstraction[T] {
 	return &abstraction[T]{
 		config: config,
 		codec:  codec,

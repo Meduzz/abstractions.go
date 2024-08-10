@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/Meduzz/abstractions.go/internal/redis/csrf"
-	"github.com/Meduzz/abstractions.go/lib/vendor"
+	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/Meduzz/helper/rudis"
 )
 
 func TestCSRF(t *testing.T) {
 	conn := rudis.Connect()
-	cfg := vendor.NewRedisConfig(conn, "")
+	cfg := specific.NewRedisConfig(conn, "")
 	ctx := context.Background()
 	module := csrf.NewCSRFAbstraction(cfg, time.Second, "csrf")
 

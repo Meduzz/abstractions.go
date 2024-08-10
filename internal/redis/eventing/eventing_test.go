@@ -6,7 +6,7 @@ import (
 
 	"github.com/Meduzz/abstractions.go/codec"
 	"github.com/Meduzz/abstractions.go/internal/redis/eventing"
-	"github.com/Meduzz/abstractions.go/lib/vendor"
+	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/Meduzz/helper/rudis"
 )
 
@@ -18,7 +18,7 @@ type (
 
 func TestEventing(t *testing.T) {
 	conn := rudis.Connect()
-	cfg := vendor.NewRedisConfig(conn, "")
+	cfg := specific.NewRedisConfig(conn, "")
 	codec := codec.NewJsonCodec[testdata]()
 	ctx := context.Background()
 	result := make(chan string, 10)

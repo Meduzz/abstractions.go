@@ -4,19 +4,19 @@ import (
 	"context"
 
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/abstractions.go/lib/vendor"
+	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/go-redis/redis/v8"
 )
 
 type (
 	eventingAbstraction[T any] struct {
-		config *vendor.RedisConfig
+		config *specific.RedisConfig
 		topic  string
 		codec  lib.Codec[T]
 	}
 )
 
-func NewEventing[T any](topic string, codec lib.Codec[T], config *vendor.RedisConfig) lib.EventingAbstraction[T] {
+func NewEventing[T any](topic string, codec lib.Codec[T], config *specific.RedisConfig) lib.EventingAbstraction[T] {
 	return &eventingAbstraction[T]{config, topic, codec}
 }
 
