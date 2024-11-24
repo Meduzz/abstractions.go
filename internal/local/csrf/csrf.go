@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Meduzz/abstractions.go/internal/local/interval"
+	"github.com/Meduzz/abstractions.go/internal/interval"
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/helper/hashing"
 )
 
 type (
@@ -21,7 +20,7 @@ type (
 	}
 )
 
-func NewLocalCsrf(ttl time.Duration) lib.CSRFAbstraction {
+func NewLocalCsrf(ttl time.Duration) lib.CSRFStorageDelegate {
 	storage := make(map[string]*localToken)
 
 	interval.OnInterval(5*time.Second, func() {
@@ -35,33 +34,29 @@ func NewLocalCsrf(ttl time.Duration) lib.CSRFAbstraction {
 	return &localCsrf{storage, ttl}
 }
 
-func (l *localCsrf) Generate(ctx context.Context) (*lib.CSRFToken, error) {
-	realToken := &lib.CSRFToken{
-		Key:   hashing.Token(),
-		Value: hashing.Secret(),
-	}
+func (l *localCsrf) Store(ctx context.Context, token *lib.CSRFToken) error {
 	storedToken := &localToken{
-		token:   realToken,
+		token:   token,
 		expires: time.Now().Add(l.ttl),
 	}
 
-	l.storage[realToken.Key] = storedToken
+	l.storage[token.Key] = storedToken
 
-	return realToken, nil
+	return nil
 }
 
-func (l *localCsrf) Verify(ctx context.Context, key, value string) (bool, error) {
-	storedToken, ok := l.storage[key]
+func (l *localCsrf) Verify(ctx context.Context, token *lib.CSRFToken) (bool, error) {
+	storedToken, ok := l.storage[token.Key]
 
 	if !ok {
-		return false, lib.ErrKeyNotFound
+		return false, nil
 	}
 
 	if storedToken.expires.Before(time.Now()) {
 		return false, nil
 	}
 
-	delete(l.storage, key)
+	delete(l.storage, token.Key)
 
 	return true, nil
 }

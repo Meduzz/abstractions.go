@@ -1,36 +1,42 @@
-package csrf_test
+package csrf
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/Meduzz/abstractions.go/internal/redis/csrf"
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/abstractions.go/lib/specific"
-	"github.com/Meduzz/helper/rudis"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-func TestCSRF(t *testing.T) {
-	conn := rudis.Connect()
-	cfg := specific.NewRedisConfig(conn, "")
+func TestDbmsCsrf(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	subject, err := NewDbmsCSRFStorageDelegate(db, time.Second)
+
+	if err != nil {
+		t.Error(err)
+	}
+
 	ctx := context.Background()
-	module := csrf.NewRedisCSRFStorageDelegate(cfg, time.Second, "csrf")
 	token := &lib.CSRFToken{
 		Key:   "key",
 		Value: "value",
 	}
 
-	defer conn.Close()
-
-	t.Run("generate and verify a token", func(t *testing.T) {
-		err := module.Store(ctx, token)
+	t.Run("happy chappy", func(t *testing.T) {
+		err := subject.Store(ctx, token)
 
 		if err != nil {
 			t.Error("generating token threw error", err)
 		}
 
-		valid, err := module.Verify(ctx, token)
+		valid, err := subject.Verify(ctx, token)
 
 		if err != nil {
 			t.Error("verifying token threw error", err)
@@ -40,7 +46,7 @@ func TestCSRF(t *testing.T) {
 			t.Error("token was not valid")
 		}
 
-		valid, err = module.Verify(ctx, token)
+		valid, err = subject.Verify(ctx, token)
 
 		if err != nil {
 			t.Error("revalidaton threw error", err)
@@ -52,7 +58,7 @@ func TestCSRF(t *testing.T) {
 	})
 
 	t.Run("verify garbage", func(t *testing.T) {
-		valid, err := module.Verify(ctx, &lib.CSRFToken{})
+		valid, err := subject.Verify(ctx, &lib.CSRFToken{})
 
 		if err != nil {
 			t.Error("invalid data threw error", err)
@@ -64,7 +70,7 @@ func TestCSRF(t *testing.T) {
 	})
 
 	t.Run("slow verifier is slow", func(t *testing.T) {
-		err := module.Store(ctx, token)
+		err := subject.Store(ctx, token)
 
 		if err != nil {
 			t.Error("generating token threw error", err)
@@ -72,7 +78,7 @@ func TestCSRF(t *testing.T) {
 
 		<-time.After(time.Second)
 
-		valid, err := module.Verify(ctx, token)
+		valid, err := subject.Verify(ctx, token)
 
 		if err != nil {
 			t.Error("verifying token threw error", err)

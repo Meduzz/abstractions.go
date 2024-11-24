@@ -1,11 +1,13 @@
 package log_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"testing"
 
-	"github.com/Meduzz/abstractions.go/codec"
 	"github.com/Meduzz/abstractions.go/internal/redis/log"
+	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/Meduzz/abstractions.go/lib/specific"
 	"github.com/Meduzz/helper/rudis"
 )
@@ -18,12 +20,11 @@ type (
 
 func TestRedisLog(t *testing.T) {
 	conn := rudis.Connect()
-	codec := codec.NewJsonCodec[testData]()
 	config := specific.NewRedisConfig(conn, "test1")
-	subject := log.NewRedisLog(config, codec, "testData")
+	subject := log.NewRedisWorkLog(config, "testData")
 	ctx := context.Background()
-	work1 := &testData{"work1"}
-	work2 := &testData{"work2"}
+	work1 := createTestData(&testData{"work1"})
+	work2 := createTestData(&testData{"work2"})
 
 	t.Run("happy camper", func(t *testing.T) {
 		err := subject.Append(ctx, work1)
@@ -54,8 +55,8 @@ func TestRedisLog(t *testing.T) {
 			t.Errorf("fetching work threw error %v", err)
 		}
 
-		if result1.Message != work1.Message {
-			t.Errorf("result.message was not work1 but %s", result1.Message)
+		if !bytes.Equal(work1.Work, result1.Work) {
+			t.Errorf("result.work was not work1 but %s", result1.Work)
 		}
 
 		size, err = subject.Size(ctx)
@@ -74,8 +75,8 @@ func TestRedisLog(t *testing.T) {
 			t.Errorf("fetching work threw error %v", err)
 		}
 
-		if result2.Message != work2.Message {
-			t.Errorf("result.message was not work2 but %s", result1.Message)
+		if !bytes.Equal(work2.Work, result2.Work) {
+			t.Errorf("result.work was not work2 but %s", result1.Work)
 		}
 
 		size, err = subject.Size(ctx)
@@ -95,7 +96,18 @@ func TestRedisLog(t *testing.T) {
 		}
 
 		if result3 != nil {
-			t.Errorf("result was not nil but %s", result1.Message)
+			t.Errorf("result was not nil but %s", result1.Work)
 		}
 	})
+}
+
+func createTestData(data *testData) *lib.WorkItem {
+	work := &lib.WorkItem{}
+
+	bs, _ := json.Marshal(data)
+
+	work.Kind = "work"
+	work.Work = bs
+
+	return work
 }

@@ -11,36 +11,30 @@ import (
 )
 
 type (
-	abstraction[T any] struct {
-		config *specific.RedisConfig
-		codec  lib.Codec[T]
-		ttl    time.Duration
-		name   string
+	abstraction struct {
+		config   *specific.RedisConfig
+		ttl      time.Duration
+		eviction lib.Eviction
+		name     string
 	}
 )
 
-func NewCaching[T any](config *specific.RedisConfig, codec lib.Codec[T], ttl time.Duration, name string) lib.CacheAbstraction[T] {
-	return &abstraction[T]{
-		config: config,
-		codec:  codec,
-		ttl:    ttl,
-		name:   name,
+func NewCaching(config *specific.RedisConfig, eviction lib.Eviction, ttl time.Duration, name string) lib.CacheStorageDelegate {
+	return &abstraction{
+		config:   config,
+		ttl:      ttl,
+		name:     name,
+		eviction: eviction,
 	}
 }
 
-func (a *abstraction[T]) Write(ctx context.Context, key string, data *T) error {
-	bs, err := a.codec.Encode(data)
-
-	if err != nil {
-		return err
-	}
-
-	result := a.config.Redis().SetEX(ctx, a.config.Prefix(a.name, key), bs, a.ttl)
+func (a *abstraction) Write(ctx context.Context, key string, data []byte) error {
+	result := a.config.Redis().SetEX(ctx, a.config.Prefix(a.name, key), data, a.ttl)
 
 	return result.Err()
 }
 
-func (a *abstraction[T]) Read(ctx context.Context, key string) (*T, error) {
+func (a *abstraction) Read(ctx context.Context, key string) ([]byte, error) {
 	result := a.config.Redis().GetEx(ctx, a.config.Prefix(a.name, key), a.ttl)
 
 	bs, err := result.Bytes()
@@ -53,9 +47,17 @@ func (a *abstraction[T]) Read(ctx context.Context, key string) (*T, error) {
 		return nil, err
 	}
 
-	return a.codec.Decode(bs)
+	if a.eviction == lib.EvictionRead {
+		err := a.config.Redis().Expire(ctx, a.config.Prefix(a.name, key), a.ttl).Err()
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return bs, nil
 }
 
-func (a *abstraction[T]) Del(ctx context.Context, key string) error {
+func (a *abstraction) Delete(ctx context.Context, key string) error {
 	return a.config.Redis().Del(ctx, a.config.Prefix(a.name, key)).Err()
 }

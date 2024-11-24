@@ -12,12 +12,10 @@ type (
 		Value string `json:"form"`
 	}
 
-	// CSRFAbstraction - to create and verify one time CSRF tokens.
-	CSRFAbstraction interface {
-		// Generate - generates a new random CSRF token.
-		Generate(ctx context.Context) (*CSRFToken, error)
-		// Verify - verifies a CSRF token, returns false if provided values does not match.
-		Verify(ctx context.Context, key, value string) (bool, error)
+	// CSRFStorageDelegate - to deal with storing and verifying existance of tokens
+	CSRFStorageDelegate interface {
+		Store(context.Context, *CSRFToken) error
+		Verify(context.Context, *CSRFToken) (bool, error)
 	}
 )
 

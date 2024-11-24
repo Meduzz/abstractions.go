@@ -4,23 +4,24 @@ import (
 	"context"
 	"time"
 
-	"github.com/Meduzz/abstractions.go/internal/local/interval"
+	"github.com/Meduzz/abstractions.go/internal/interval"
 	"github.com/Meduzz/abstractions.go/lib"
 )
 
 type (
-	cacheValue[T any] struct {
+	cacheValue struct {
 		expire time.Time
-		data   *T
+		data   []byte
 	}
-	localCache[T any] struct {
-		ttl     time.Duration
-		storage map[string]*cacheValue[T]
+	localCache struct {
+		eviction lib.Eviction
+		ttl      time.Duration
+		storage  map[string]*cacheValue
 	}
 )
 
-func NewCache[T any](ttl time.Duration) lib.CacheAbstraction[T] {
-	storage := make(map[string]*cacheValue[T])
+func NewCache(eviction lib.Eviction, ttl time.Duration) lib.CacheStorageDelegate {
+	storage := make(map[string]*cacheValue)
 
 	interval.OnInterval(5*time.Second, func() {
 		for k, v := range storage {
@@ -30,12 +31,12 @@ func NewCache[T any](ttl time.Duration) lib.CacheAbstraction[T] {
 		}
 	})
 
-	return &localCache[T]{ttl, storage}
+	return &localCache{eviction, ttl, storage}
 }
 
-func (l *localCache[T]) Write(ctx context.Context, key string, data *T) error {
+func (l *localCache) Write(ctx context.Context, key string, data []byte) error {
 	expires := time.Now().Add(l.ttl)
-	item := &cacheValue[T]{
+	item := &cacheValue{
 		expire: expires,
 		data:   data,
 	}
@@ -45,7 +46,7 @@ func (l *localCache[T]) Write(ctx context.Context, key string, data *T) error {
 	return nil
 }
 
-func (l *localCache[T]) Read(ctx context.Context, key string) (*T, error) {
+func (l *localCache) Read(ctx context.Context, key string) ([]byte, error) {
 	item, ok := l.storage[key]
 
 	if !ok {
@@ -62,7 +63,7 @@ func (l *localCache[T]) Read(ctx context.Context, key string) (*T, error) {
 	return item.data, nil
 }
 
-func (l *localCache[T]) Del(ctx context.Context, key string) error {
+func (l *localCache) Delete(ctx context.Context, key string) error {
 	delete(l.storage, key)
 
 	return nil

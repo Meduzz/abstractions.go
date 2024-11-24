@@ -1,4 +1,4 @@
-package caching_test
+package caching
 
 import (
 	"bytes"
@@ -7,21 +7,32 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Meduzz/abstractions.go/internal/redis/caching"
 	"github.com/Meduzz/abstractions.go/lib"
-	"github.com/Meduzz/abstractions.go/lib/specific"
-	"github.com/Meduzz/helper/rudis"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-func TestCaching(t *testing.T) {
-	conn := rudis.Connect()
-	cfg := specific.NewRedisConfig(conn, "")
-	writeSubject := caching.NewCaching(cfg, lib.EvictionWrite, time.Second, "cache")
-	readSubject := caching.NewCaching(cfg, lib.EvictionRead, time.Second, "cache")
-	data := []byte("Im data")
-	ctx := context.Background()
+func TestDbmsCaching(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
 
-	defer conn.Close()
+	if err != nil {
+		t.Error(err)
+	}
+
+	writeSubject, err := NewDbmsCachingDelegate(db, lib.EvictionWrite, "write", time.Second)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	readSubject, err := NewDbmsCachingDelegate(db, lib.EvictionRead, "read", time.Second)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	ctx := context.Background()
+	data := []byte("Im data")
 
 	t.Run("test caching with writeEviction", func(t *testing.T) {
 		err := writeSubject.Write(ctx, "cache.test1", data)
@@ -114,4 +125,5 @@ func TestCaching(t *testing.T) {
 			t.Error("no error was thrown", data)
 		}
 	})
+
 }

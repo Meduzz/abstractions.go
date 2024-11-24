@@ -1,15 +1,22 @@
 package lib
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+)
 
 type (
-	// LogAbstraction - can be though of as a work queue.
-	LogAbstraction[T any] interface {
+	WorkItem struct {
+		Kind string          `json:"kind"`
+		Work json.RawMessage `json:"work"`
+	}
+
+	WorkLogDelegate interface {
 		// Append - append work to the queue
-		Append(context.Context, *T) error
+		Append(context.Context, *WorkItem) error
 		// Size - fetch the size of the queue
 		Size(context.Context) (int64, error)
 		// Fetch - fetch the first item in the log and remove it
-		Fetch(context.Context) (*T, error)
+		Fetch(context.Context) (*WorkItem, error)
 	}
 )

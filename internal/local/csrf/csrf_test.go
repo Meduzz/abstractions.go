@@ -12,11 +12,14 @@ import (
 func TestLocalCsrf(t *testing.T) {
 	subject := csrf.NewLocalCsrf(time.Second)
 	ctx := context.Background()
+	token := &lib.CSRFToken{
+		Key:   "key",
+		Value: "value",
+	}
 
 	t.Run("happy campers", func(t *testing.T) {
-		token, _ := subject.Generate(ctx)
-
-		ok, err := subject.Verify(ctx, token.Key, token.Value)
+		subject.Store(ctx, token)
+		ok, err := subject.Verify(ctx, token)
 
 		if err != nil {
 			t.Errorf("error was not nil but %v", err)
@@ -27,7 +30,7 @@ func TestLocalCsrf(t *testing.T) {
 		}
 
 		// verify the token a second time should fail
-		ok, err = subject.Verify(ctx, token.Key, token.Value)
+		ok, err = subject.Verify(ctx, token)
 
 		if err == nil {
 			t.Error("there was no error")
@@ -39,7 +42,11 @@ func TestLocalCsrf(t *testing.T) {
 	})
 
 	t.Run("verify garbage", func(t *testing.T) {
-		ok, err := subject.Verify(ctx, "asdf", "qwer")
+		bad := &lib.CSRFToken{
+			Key:   "asdf",
+			Value: "qwer",
+		}
+		ok, err := subject.Verify(ctx, bad)
 
 		if err == nil {
 			t.Error("there was no error")
@@ -47,29 +54,6 @@ func TestLocalCsrf(t *testing.T) {
 
 		if ok {
 			t.Error("the token was valid")
-		}
-	})
-
-	t.Run("playing with fire (jwt)", func(t *testing.T) {
-		token, _ := subject.Generate(ctx)
-		strToken, err := token.Encode()
-
-		if err != nil {
-			t.Errorf("generating jwt threw error: %v", err)
-		}
-
-		result, err := lib.DecodeToken(strToken)
-
-		if err != nil {
-			t.Errorf("parsing token threw error: %v", err)
-		}
-
-		if result == nil {
-			t.Error("token was not parsed")
-		}
-
-		if result.Key != token.Key || result.Value != token.Value {
-			t.Error("token and result does not match")
 		}
 	})
 

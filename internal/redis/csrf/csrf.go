@@ -7,7 +7,6 @@ import (
 
 	"github.com/Meduzz/abstractions.go/lib"
 	"github.com/Meduzz/abstractions.go/lib/specific"
-	"github.com/Meduzz/helper/hashing"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -19,7 +18,7 @@ type (
 	}
 )
 
-func NewCSRFAbstraction(config *specific.RedisConfig, ttl time.Duration, name string) lib.CSRFAbstraction {
+func NewRedisCSRFStorageDelegate(config *specific.RedisConfig, ttl time.Duration, name string) lib.CSRFStorageDelegate {
 	return &abstraction{
 		config: config,
 		ttl:    ttl,
@@ -27,26 +26,18 @@ func NewCSRFAbstraction(config *specific.RedisConfig, ttl time.Duration, name st
 	}
 }
 
-func (a *abstraction) Generate(ctx context.Context) (*lib.CSRFToken, error) {
-	key := hashing.Token()
-	value := hashing.Secret()
-
-	token := &lib.CSRFToken{
-		Key:   key,
-		Value: value,
-	}
-
-	err := a.config.Redis().Set(ctx, a.config.Prefix(a.name, key), value, a.ttl).Err()
+func (a *abstraction) Store(ctx context.Context, token *lib.CSRFToken) error {
+	err := a.config.Redis().Set(ctx, a.config.Prefix(a.name, token.Key), token.Value, a.ttl).Err()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return token, nil
+	return nil
 }
 
-func (a *abstraction) Verify(ctx context.Context, key, value string) (bool, error) {
-	data, err := a.config.Redis().GetDel(ctx, a.config.Prefix(a.name, key)).Result()
+func (a *abstraction) Verify(ctx context.Context, token *lib.CSRFToken) (bool, error) {
+	data, err := a.config.Redis().GetDel(ctx, a.config.Prefix(a.name, token.Key)).Result()
 
 	if err != nil {
 		if errors.Is(redis.Nil, err) {
@@ -56,5 +47,5 @@ func (a *abstraction) Verify(ctx context.Context, key, value string) (bool, erro
 		return false, err
 	}
 
-	return data == value, nil
+	return data == token.Value, nil
 }

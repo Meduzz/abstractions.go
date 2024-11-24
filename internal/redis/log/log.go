@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/Meduzz/abstractions.go/lib"
@@ -10,25 +11,23 @@ import (
 )
 
 type (
-	logAbstraction[T any] struct {
+	redisWorkLogDelegate struct {
 		config *specific.RedisConfig
-		codec  lib.Codec[T]
 		name   string
 	}
 )
 
-func NewRedisLog[T any](config *specific.RedisConfig, codec lib.Codec[T], name string) lib.LogAbstraction[T] {
+func NewRedisWorkLog(config *specific.RedisConfig, name string) lib.WorkLogDelegate {
 	fullName := config.Prefix(name)
 
-	return &logAbstraction[T]{
+	return &redisWorkLogDelegate{
 		config: config,
-		codec:  codec,
 		name:   fullName,
 	}
 }
 
-func (l *logAbstraction[T]) Append(ctx context.Context, work *T) error {
-	bs, err := l.codec.Encode(work)
+func (l *redisWorkLogDelegate) Append(ctx context.Context, work *lib.WorkItem) error {
+	bs, err := json.Marshal(work)
 
 	if err != nil {
 		return err
@@ -37,7 +36,7 @@ func (l *logAbstraction[T]) Append(ctx context.Context, work *T) error {
 	return l.config.Redis().RPush(ctx, l.name, bs).Err()
 }
 
-func (l *logAbstraction[T]) Size(ctx context.Context) (int64, error) {
+func (l *redisWorkLogDelegate) Size(ctx context.Context) (int64, error) {
 	size, err := l.config.Redis().LLen(ctx, l.name).Result()
 
 	if err != nil {
@@ -51,7 +50,7 @@ func (l *logAbstraction[T]) Size(ctx context.Context) (int64, error) {
 	return size, nil
 }
 
-func (l *logAbstraction[T]) Fetch(ctx context.Context) (*T, error) {
+func (l *redisWorkLogDelegate) Fetch(ctx context.Context) (*lib.WorkItem, error) {
 	workBytes, err := l.config.Redis().LPop(ctx, l.name).Result()
 
 	if err != nil {
@@ -62,5 +61,12 @@ func (l *logAbstraction[T]) Fetch(ctx context.Context) (*T, error) {
 		return nil, err
 	}
 
-	return l.codec.Decode([]byte(workBytes))
+	work := &lib.WorkItem{}
+	err = json.Unmarshal([]byte(workBytes), work)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return work, nil
 }
